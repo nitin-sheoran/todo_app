@@ -40,13 +40,11 @@ dependencies:
   random_string: ^2.3.1
   fluttertoast: ^8.2.5
   provider: ^6.1.2
-  google_sign_in: ^6.2.1
   shared_preferences: ^2.2.3
   get: ^4.6.6
   intl: ^0.19.0
   flutter_local_notifications: ^15.1.1
   timezone: any
-  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

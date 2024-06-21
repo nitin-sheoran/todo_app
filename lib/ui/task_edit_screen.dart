@@ -39,7 +39,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     dateController = TextEditingController(text: widget.date);
     timeController = TextEditingController(text: widget.time);
     priority = widget.priority;
-    LocalNotification.init();
+    LocalNotificationService.init();
   }
 
   @override
@@ -65,7 +65,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       DateTime taskDateTime = DateFormat('dd-MM-yyyy hh:mm a').parse(dateTimeString);
 
       DateTime notificationDateTime = taskDateTime.subtract(const Duration(minutes: 10));
-      await LocalNotification.scheduleNotification(
+      await LocalNotificationService.scheduleNotification(
         id: widget.taskId.hashCode,
         title: 'Task Complete',
         body: 'Your task ${titleController.text}',
@@ -274,7 +274,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                         ))),
                     onPressed: updateTaskDetails,
                     child: const Text(
-                      'Submit',
+                      'Update Task',
                       style: TextStyle(fontSize: 18, color: Colors.black),
                     ),
                   ),
