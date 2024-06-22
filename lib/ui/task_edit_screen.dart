@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:todo_app/provider/task_provider.dart';
 import 'package:todo_app/service/database_method.dart';
 import 'package:todo_app/service/notification_service.dart';
 
 class TaskEditScreen extends StatefulWidget {
   const TaskEditScreen(
       {super.key,
-        required this.taskId,
-        required this.title,
-        required this.description,
-        required this.date,
-        required this.time, required this.priority});
+      required this.taskId,
+      required this.title,
+      required this.description,
+      required this.date,
+      required this.time,
+      required this.priority});
 
   final String taskId;
   final String title;
@@ -24,51 +27,51 @@ class TaskEditScreen extends StatefulWidget {
 }
 
 class _TaskEditScreenState extends State<TaskEditScreen> {
-  late TextEditingController titleController;
-  late TextEditingController descriptionController;
-  late TextEditingController dateController;
-  late TextEditingController timeController;
-  String priority = '';
-
+  late TaskProvider taskProvider;
 
   @override
   void initState() {
     super.initState();
-    titleController = TextEditingController(text: widget.title);
-    descriptionController = TextEditingController(text: widget.description);
-    dateController = TextEditingController(text: widget.date);
-    timeController = TextEditingController(text: widget.time);
-    priority = widget.priority;
+    taskProvider = Provider.of<TaskProvider>(context,listen:false);
+    taskProvider.editTitleController = TextEditingController(text: widget.title);
+    taskProvider.editDescriptionController = TextEditingController(text: widget.description);
+    taskProvider.editDateController = TextEditingController(text: widget.date);
+    taskProvider.editTimeController = TextEditingController(text: widget.time);
+    taskProvider.editPriority = widget.priority;
     LocalNotificationService.init();
   }
 
   @override
   void dispose() {
-    titleController.dispose();
-    descriptionController.dispose();
-    dateController.dispose();
-    timeController.dispose();
+    taskProvider.editTitleController.dispose();
+    taskProvider.editDescriptionController.dispose();
+    taskProvider.editDateController.dispose();
+    taskProvider.editTimeController.dispose();
     super.dispose();
   }
 
   Future<void> updateTaskDetails() async {
     Map<String, dynamic> editInfo = {
-      'Title': titleController.text,
-      'Description': descriptionController.text,
-      'Date': dateController.text,
-      'Time': timeController.text,
-      'Priority' : priority,
+      'Title': taskProvider.editTitleController.text,
+      'Description': taskProvider.editDescriptionController.text,
+      'Date': taskProvider.editDateController.text,
+      'Time': taskProvider.editTimeController.text,
+      'Priority': taskProvider.editPriority,
     };
 
-    await DatabaseMethod().updateTaskDetails(widget.taskId, editInfo).then((value) async {
-      String dateTimeString = '${dateController.text} ${timeController.text}';
-      DateTime taskDateTime = DateFormat('dd-MM-yyyy hh:mm a').parse(dateTimeString);
+    await DatabaseMethod()
+        .updateTaskDetails(widget.taskId, editInfo)
+        .then((value) async {
+      String dateTimeString = '${taskProvider.editDateController.text} ${taskProvider.editTimeController.text}';
+      DateTime taskDateTime =
+          DateFormat('dd-MM-yyyy hh:mm a').parse(dateTimeString);
 
-      DateTime notificationDateTime = taskDateTime.subtract(const Duration(minutes: 10));
+      DateTime notificationDateTime =
+          taskDateTime.subtract(const Duration(minutes: 10));
       await LocalNotificationService.scheduleNotification(
         id: widget.taskId.hashCode,
         title: 'Task Complete',
-        body: 'Your task ${titleController.text}',
+        body: 'Your task ${taskProvider.editTitleController.text}',
         scheduledDate: notificationDateTime,
       );
       Navigator.pop(context);
@@ -88,7 +91,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
         title: const Text('Task Edit'),
       ),
       body: Container(
-        margin: const EdgeInsets.only(left: 16,right: 16,bottom: 16,top: 10),
+        margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 10),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,9 +105,10 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                 padding: const EdgeInsets.only(left: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(),),
+                  border: Border.all(),
+                ),
                 child: TextField(
-                  controller: titleController,
+                  controller: taskProvider.editTitleController,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     hintText: 'Title',
@@ -121,9 +125,10 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                 padding: const EdgeInsets.only(left: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(),),
+                  border: Border.all(),
+                ),
                 child: TextField(
-                  controller: descriptionController,
+                  controller: taskProvider.editDescriptionController,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     hintText: 'Description',
@@ -141,9 +146,10 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                 padding: const EdgeInsets.only(left: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(),),
+                  border: Border.all(),
+                ),
                 child: TextField(
-                  controller: dateController,
+                  controller: taskProvider.editDateController,
                   readOnly: true,
                   decoration: InputDecoration(
                     border: InputBorder.none,
@@ -159,8 +165,8 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                         );
                         if (pickedDate != null) {
                           setState(() {
-                            dateController.text =
-                            "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
+                            taskProvider.editDateController.text =
+                                "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
                           });
                         }
                       },
@@ -176,7 +182,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                   border: Border.all(),
                 ),
                 child: TextField(
-                  controller: timeController,
+                  controller: taskProvider.editTimeController,
                   readOnly: true, // Make the TextField read-only
                   decoration: InputDecoration(
                     border: InputBorder.none,
@@ -191,9 +197,11 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                         if (pickedTime != null) {
                           setState(() {
                             final now = DateTime.now();
-                            final dt = DateTime(now.year, now.month, now.day, pickedTime.hour, pickedTime.minute);
-                            final format = DateFormat('hh:mm a'); // 12-hour format with AM/PM
-                            timeController.text = format.format(dt);
+                            final dt = DateTime(now.year, now.month, now.day,
+                                pickedTime.hour, pickedTime.minute);
+                            final format = DateFormat(
+                                'hh:mm a'); // 12-hour format with AM/PM
+                            taskProvider.editTimeController.text = format.format(dt);
                           });
                         }
                       },
@@ -211,16 +219,15 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                 height: height * 0.07,
                 decoration: BoxDecoration(
                     color: const Color(0xffFFFFFF),
-                    borderRadius:
-                    BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all()),
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 10,right: 10),
+                  padding: const EdgeInsets.only(left: 10, right: 10),
                   child: DropdownButtonFormField<String>(
-                    value: priority,
+                    value: taskProvider.editPriority,
                     onChanged: (newValue) {
                       setState(() {
-                        priority = newValue!;
+                        taskProvider.editPriority = newValue!;
                       });
                     },
                     decoration: const InputDecoration(
@@ -238,8 +245,8 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                         child: Text(
                           value,
                           style: const TextStyle(
-                              color: Colors.black54,
-                              fontSize: 16,
+                            color: Colors.black54,
+                            fontSize: 16,
                           ),
                         ),
                       );
@@ -252,12 +259,9 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                       size: 35,
                     ),
                   ),
-
                 ),
               ),
-
               SizedBox(height: height * 0.06),
-
               SizedBox(
                 width: double.infinity,
                 child: Card(
@@ -268,7 +272,8 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                   child: ElevatedButton(
                     style: ButtonStyle(
                         elevation: const WidgetStatePropertyAll(0),
-                        backgroundColor: const WidgetStatePropertyAll(Colors.white),
+                        backgroundColor:
+                            const WidgetStatePropertyAll(Colors.white),
                         shape: WidgetStatePropertyAll(RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
                         ))),

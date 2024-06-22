@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:todo_app/provider/task_provider.dart';
 import 'package:todo_app/service/database_method.dart';
 import 'package:todo_app/ui/add_task_screen.dart';
 import 'package:todo_app/ui/task_edit_screen.dart';
@@ -13,18 +15,14 @@ class HomePageScreen extends StatefulWidget {
 }
 
 class _HomePageScreenState extends State<HomePageScreen> {
-  Stream<QuerySnapshot>? taskStream;
-  bool hasTasks = false;
-  bool isSearching = false;
-  String searchQuery = '';
-  String filterOption = 'default';
+  late TaskProvider taskProvider;
 
   @override
   void initState() {
+    taskProvider = Provider.of<TaskProvider>(context,listen:false);
     getOnTheLoad();
     super.initState();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +31,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
       appBar: AppBar(
         surfaceTintColor: AppColorConstant.white,
         backgroundColor: Colors.white,
-        title: isSearching
+        title: taskProvider.isSearching
             ? TextFormField(
                 autofocus: true,
                 cursorHeight: 22,
@@ -49,7 +47,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 ),
                 onChanged: (value) {
                   setState(() {
-                    searchQuery = value;
+                    taskProvider.searchQuery = value;
                   });
                 },
               )
@@ -58,14 +56,14 @@ class _HomePageScreenState extends State<HomePageScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 6),
             child: IconButton(
-              icon: Icon(isSearching ? Icons.close : Icons.search),
+              icon: Icon(taskProvider.isSearching ? Icons.close : Icons.search),
               color: Colors.black,
               onPressed: () {
                 setState(() {
-                  if (isSearching) {
-                    searchQuery = '';
+                  if (taskProvider.isSearching) {
+                    taskProvider.searchQuery = '';
                   }
-                  isSearching = !isSearching;
+                  taskProvider.isSearching = !taskProvider.isSearching;
                 });
               },
             ),
@@ -75,7 +73,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
             icon: const Icon(Icons.filter_list, color: Colors.black),
             onSelected: (value) {
               setState(() {
-                filterOption = value;
+                taskProvider.filterOption = value;
               });
             },
             itemBuilder: (BuildContext context) {
@@ -137,7 +135,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
           ],
         ),
       ),
-      floatingActionButton: hasTasks
+      floatingActionButton: taskProvider.hasTasks
           ? FloatingActionButton(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(100),
@@ -159,7 +157,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
   Widget allTaskDetails() {
     return StreamBuilder(
-      stream: taskStream,
+      stream: taskProvider.taskStream,
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -167,12 +165,12 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
         List<DocumentSnapshot> tasks = snapshot.data!.docs;
 
-        if (searchQuery.isNotEmpty) {
+        if (taskProvider.searchQuery.isNotEmpty) {
           tasks = tasks.where((doc) {
             return doc['Title']
                 .toString()
                 .toLowerCase()
-                .contains(searchQuery.toLowerCase());
+                .contains(taskProvider.searchQuery.toLowerCase());
           }).toList();
         }
 
@@ -391,17 +389,17 @@ class _HomePageScreenState extends State<HomePageScreen> {
   }
 
   getOnTheLoad() async {
-    taskStream = await DatabaseMethod().getTaskDetails();
-    taskStream?.listen((event) {
+    taskProvider.taskStream = await DatabaseMethod().getTaskDetails();
+    taskProvider.taskStream?.listen((event) {
       setState(() {
-        hasTasks = event.docs.isNotEmpty;
+        taskProvider.hasTasks = event.docs.isNotEmpty;
       });
     });
     setState(() {});
   }
 
   void sortTasks(List<DocumentSnapshot> tasks) {
-    switch (filterOption) {
+    switch (taskProvider.filterOption) {
       case 'all':
         tasks.sort((a, b) => b['CreationDate'].compareTo(a['CreationDate']));
         break;
